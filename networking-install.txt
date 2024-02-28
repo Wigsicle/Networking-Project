@@ -1,0 +1,4 @@
+python3 -m venv /home/wigsicle/Networking
+source /home/wigsicle/Networking/bin/activate
+pip install paho-mqtt==1.6.0
+python MQTT.py
