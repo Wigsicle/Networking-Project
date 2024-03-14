@@ -8,6 +8,16 @@ def UsernameValidator(username, client_names):
             return False
     return True
 
+def create_group(group_name, members, client_names, client_socket):
+    # Validate group name
+    if not group_name.isalnum() or len(group_name.split()) > 1:
+        client_socket.sendall("[Invalid group name. Group name must contain only alphanumeric characters and be a single word.]".encode('utf-8'))
+        return
+
+    # Add group to the dictionary of client groups
+    client_names[group_name] = members
+    client_socket.sendall(f"[Group {group_name} created with members: {', '.join(members)}]".encode('utf-8'))
+
         
 # Function to handle client connections
 def handle_client(client_socket, clients, client_names):
@@ -22,8 +32,22 @@ def handle_client(client_socket, clients, client_names):
     while True:
         try:
             message = client_socket.recv(1024).decode('utf-8')
+            if message.startswith("@group set"):
+                # Extract group name and members from the message
+                parts = message.split("group set ")[1].split()
+                group_name = parts[0]
+                members = [name.strip() for name in parts[1].split(",")]
+
+                # Validate that all members exist
+                for member in members:
+                    if member not in client_names.values():
+                        client_socket.sendall(f"[Error: {member} does not exist. Cannot create group.]".encode('utf-8'))
+                        break
+                else:
+                    # Create the group
+                    create_group(group_name, members, client_names, client_socket) 
             # Receive @quit message from client
-            if message == "@quit":
+            elif message == "@quit":
                 for client in clients:
                     if client != client_socket:
                         client.sendall(f"[{client_names[client_socket]} exited]".encode('utf-8'))
