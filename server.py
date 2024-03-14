@@ -66,10 +66,19 @@ def handle_client(client_socket, clients, client_names):
                 client_socket.sendall(namesMessage.encode('utf-8'))
             # Receive normal message from client
             elif message:
-                # Broadcast message to all clients
-                for client in clients:
-                    if client != client_socket:
-                        client.sendall(f"[{client_names[client_socket]}]: {message}".encode('utf-8'))
+                if message.startswith('@'):
+                    recipient_username, personal_message = message[1:].split(' ', 1)
+                    # Iterate through clients to find the recipient
+                    for client, username in client_names.items():
+                        if username == recipient_username:
+                            client.sendall(
+                                f"[{client_names[client_socket]} (private)]: {personal_message}".encode('utf-8'))
+                            break
+                else:
+                    # Broadcast message to all clients
+                    for client in clients:
+                        if client != client_socket:
+                            client.sendall(f"[{client_names[client_socket]}]: {message}".encode('utf-8'))
         except Exception as e:
             print(f"Error: {e}")
             break
